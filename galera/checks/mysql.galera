@@ -1,0 +1,137 @@
+#!/usr/bin/python
+# -*- encoding: utf-8; py-indent-offset: 4 -*-
+
+def inventory_mysql(parsed):
+
+  for instance, values in parsed.items():
+  
+    if len(values.keys()) > 200: # should be at least 321 line
+    
+      return [(instance, {})]
+
+def check_galera_cluster_name(item, params, parsed):
+
+  if item in parsed:
+
+    values = parsed[item]
+
+    return (0, "Name: %s" % values['wsrep_cluster_name'])
+
+# declare the check to Check_MK
+check_info["mysql.galera_cluster_name"] = {
+  'check_function'            : check_galera_cluster_name,
+  'inventory_function'        : inventory_mysql,
+  'service_description'       : 'Galera Cluster Name %s',
+  'has_perfdata'              : False,
+  'group'                     : "galera",
+}
+
+def check_galera_cluster_status(item, params, parsed):
+
+  if item in parsed:
+
+    values = parsed[item]
+
+    msg = "Node has status '%s' in cluster." % values['wsrep_cluster_status']
+
+    if values['wsrep_cluster_status'] == 'Primary':
+
+      return (0, msg)
+
+    else:
+
+      return (2, msg)
+
+check_info["mysql.galera_cluster_status"] = {
+  'check_function'            : check_galera_cluster_status,
+  'inventory_function'        : inventory_mysql,
+  'service_description'       : 'Galera Cluster Status %s',
+  'has_perfdata'              : False,
+  'group'                     : "galera",
+}
+
+def check_galera_cluster_size(item, params, parsed):
+
+  if item in parsed:
+
+    values = parsed[item]
+
+    wsrep_incoming_addresses = len(values['wsrep_incoming_addresses'].split(','))
+
+    wsrep_cluster_size = values['wsrep_cluster_size']
+
+    perfdata = [ ( "galera_cluster_size", wsrep_cluster_size, wsrep_incoming_addresses - 1 , wsrep_incoming_addresses - 1) ]
+
+    if wsrep_cluster_size <> wsrep_incoming_addresses:
+
+      return (3, "Cluster member size '%s' has not expected size of '%s' member." % ( wsrep_cluster_size, wsrep_incoming_addresses ), perfdata )
+
+    return (0, "Cluster member size '%s' has expected size of '%s' member." % ( wsrep_cluster_size, wsrep_incoming_addresses ), perfdata )
+
+check_info["mysql.galera_cluster_size"] = {
+  'check_function'            : check_galera_cluster_size,
+  'inventory_function'        : inventory_mysql,
+  'service_description'       : 'Galera Cluster Size %s',
+  'has_perfdata'              : True,
+  'group'                     : "galera",
+}
+
+def check_galera_ready(item, params, parsed):
+
+  if item in parsed:
+
+    values = parsed[item]
+
+    if values['wsrep_ready'] == 'ON':
+
+      return (0, "Node accept's queries.")
+
+    else:
+
+      return (2, "Node does not accept queries.")
+
+check_info["mysql.galera_ready"] = {
+  'check_function'            : check_galera_ready,
+  'inventory_function'        : inventory_mysql,
+  'service_description'       : 'Galera Node accept queries %s',
+  'has_perfdata'              : False,
+  'group'                     : "galera",
+}
+
+def check_galera_state(item, params, parsed):
+
+  if item in parsed:
+
+    values = parsed[item]
+
+    return (0, "Node state is '%s'." % values['wsrep_local_state_comment'])
+
+check_info["mysql.galera_state"] = {
+  'check_function'            : check_galera_state,
+  'inventory_function'        : inventory_mysql,
+  'service_description'       : 'Galera Node state %s',
+  'has_perfdata'              : False,
+  'group'                     : "galera",
+}
+
+def check_galera_connected(item, params, parsed):
+
+  if item in parsed:
+
+    values = parsed[item]
+
+    if values['wsrep_connected'] == 'ON':
+
+      return (0, "Node has a network connection to one or more other nodes.")
+
+    else:
+
+      return (2, "Node does not have a connection to any cluster components.")
+
+check_info["mysql.galera_connected"] = {
+  'check_function'            : check_galera_connected,
+  'inventory_function'        : inventory_mysql,
+  'service_description'       : 'Galera Node connected %s',
+  'has_perfdata'              : False,
+  'group'                     : "galera",
+}
